@@ -46,13 +46,6 @@ import { markedAcl } from '../utils/marked.acl';
 import { IComponentDep } from './compiler/angular/deps/component-dep.factory';
 
 const cwd = process.cwd();
-let startTime = new Date();
-let generationPromiseResolve;
-let generationPromiseReject;
-const generationPromise = new Promise((resolve, reject) => {
-    generationPromiseResolve = resolve;
-    generationPromiseReject = reject;
-});
 
 export class Application {
     /**
@@ -78,6 +71,11 @@ export class Application {
      */
     private packageJsonData = {};
 
+    private generationPromise: Promise<{}>;
+    private generationPromiseResolve: any;
+    private generationPromiseReject: any;
+    private startTime: Date = new Date();
+
     /**
      * Create a new compodoc application instance.
      *
@@ -88,21 +86,29 @@ export class Application {
             if (typeof Configuration.mainData[option] !== 'undefined') {
                 Configuration.mainData[option] = options[option];
             }
-            // For documentationMainName, process it outside the loop, for handling conflict with pages name
             if (option === 'name') {
                 Configuration.mainData.documentationMainName = options[option];
             }
-            // For documentationMainName, process it outside the loop, for handling conflict with pages name
             if (option === 'silent') {
                 logger.silent = false;
             }
         }
+        this.resetGenerationPromise();
+    }
+
+    private resetGenerationPromise() {
+        this.startTime = new Date();
+        this.generationPromise = new Promise((resolve, reject) => {
+            this.generationPromiseResolve = resolve;
+            this.generationPromiseReject = reject;
+        });
     }
 
     /**
      * Start compodoc process
      */
     protected generate(): Promise<{}> {
+        this.resetGenerationPromise();
         process.on('unhandledRejection', this.unhandledRejectionListener);
         process.on('uncaughtException', this.uncaughtExceptionListener);
 
@@ -119,7 +125,7 @@ export class Application {
         } else {
             HtmlEngine.init(Configuration.mainData.templates).then(() => this.processPackageJson());
         }
-        return generationPromise;
+        return this.generationPromise;
     }
 
     private endCallback() {
@@ -605,7 +611,7 @@ export class Application {
                             Configuration.mainData.output,
                             Configuration.mainData
                         ).then(() => {
-                            generationPromiseResolve(true);
+                            this.generationPromiseResolve(true);
                             this.endCallback();
                             logger.info(
                                 'Documentation generated in ' +
@@ -800,7 +806,7 @@ export class Application {
                             Configuration.mainData.output,
                             Configuration.mainData
                         ).then(() => {
-                            generationPromiseResolve(true);
+                            this.generationPromiseResolve(true);
                             this.endCallback();
                             logger.info(
                                 'Documentation generated in ' +
@@ -2235,11 +2241,11 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                     logger.info(
                         `Documentation coverage (${coverageData.count}%) is over threshold (${Configuration.mainData.coverageTestThreshold}%)`
                     );
-                    generationPromiseResolve(true);
+                    this.generationPromiseResolve(true);
                     process.exit(0);
                 } else {
                     let message = `Documentation coverage (${coverageData.count}%) is not over threshold (${Configuration.mainData.coverageTestThreshold}%)`;
-                    generationPromiseReject();
+                    this.generationPromiseReject();
                     if (Configuration.mainData.coverageTestThresholdFail) {
                         logger.error(message);
                         process.exit(1);
@@ -2256,7 +2262,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                 // Per file coverage test and not global
                 if (coverageTestPerFileResults.underFiles.length > 0) {
                     let message = `Documentation coverage per file is not over threshold (${Configuration.mainData.coverageMinimumPerFile}%)`;
-                    generationPromiseReject();
+                    this.generationPromiseReject();
                     if (Configuration.mainData.coverageTestThresholdFail) {
                         logger.error(message);
                         process.exit(1);
@@ -2268,7 +2274,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                     logger.info(
                         `Documentation coverage per file is over threshold (${Configuration.mainData.coverageMinimumPerFile}%)`
                     );
-                    generationPromiseResolve(true);
+                    this.generationPromiseResolve(true);
                     process.exit(0);
                 }
             } else if (
@@ -2287,7 +2293,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                     logger.info(
                         `Documentation coverage per file is over threshold (${Configuration.mainData.coverageMinimumPerFile}%)`
                     );
-                    generationPromiseResolve(true);
+                    this.generationPromiseResolve(true);
                     process.exit(0);
                 } else if (
                     coverageData.count >= Configuration.mainData.coverageTestThreshold &&
@@ -2297,7 +2303,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                         `Documentation coverage (${coverageData.count}%) is over threshold (${Configuration.mainData.coverageTestThreshold}%)`
                     );
                     let message = `Documentation coverage per file is not over threshold (${Configuration.mainData.coverageMinimumPerFile}%)`;
-                    generationPromiseReject();
+                    this.generationPromiseReject();
                     if (Configuration.mainData.coverageTestThresholdFail) {
                         logger.error(message);
                         process.exit(1);
@@ -2311,7 +2317,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                 ) {
                     let messageGlobal = `Documentation coverage (${coverageData.count}%) is not over threshold (${Configuration.mainData.coverageTestThreshold}%)`,
                         messagePerFile = `Documentation coverage per file is not over threshold (${Configuration.mainData.coverageMinimumPerFile}%)`;
-                    generationPromiseReject();
+                    this.generationPromiseReject();
                     if (Configuration.mainData.coverageTestThresholdFail) {
                         logger.error(messageGlobal);
                         logger.error(messagePerFile);
@@ -2324,7 +2330,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                 } else {
                     let message = `Documentation coverage (${coverageData.count}%) is not over threshold (${Configuration.mainData.coverageTestThreshold}%)`,
                         messagePerFile = `Documentation coverage per file is over threshold (${Configuration.mainData.coverageMinimumPerFile}%)`;
-                    generationPromiseReject();
+                    this.generationPromiseReject();
                     if (Configuration.mainData.coverageTestThresholdFail) {
                         logger.error(message);
                         logger.info(messagePerFile);
@@ -2840,7 +2846,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
                 );
                 this.runWebServer(Configuration.mainData.output);
             } else {
-                generationPromiseResolve(true);
+                this.generationPromiseResolve(true);
                 this.endCallback();
             }
         };
@@ -2957,7 +2963,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
      * @returns {number}
      */
     private getElapsedTime() {
-        return (new Date().valueOf() - startTime.valueOf()) / 1000;
+        return (new Date().valueOf() - this.startTime.valueOf()) / 1000;
     }
 
     public processGraphs() {
@@ -3076,7 +3082,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
         if (Configuration.mainData.watch && !this.isWatching) {
             if (typeof this.files === 'undefined') {
                 logger.error('No sources files available, please use -p flag');
-                generationPromiseReject();
+                this.generationPromiseReject();
                 process.exit(1);
             } else {
                 this.runWatch();
@@ -3114,7 +3120,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
         let timerAddAndRemoveRef;
         let timerChangeRef;
         let runnerAddAndRemove = () => {
-            startTime = new Date();
+            this.startTime = new Date();
             this.generate();
         };
         let waiterAddAndRemove = () => {
@@ -3122,7 +3128,7 @@ at least one config for the 'info' or 'source' tab in --navTabConfig.`);
             timerAddAndRemoveRef = setTimeout(runnerAddAndRemove, 1000);
         };
         let runnerChange = () => {
-            startTime = new Date();
+            this.startTime = new Date();
             this.setUpdatedFiles(this.watchChangedFiles);
             if (this.hasWatchedFilesTSFiles()) {
                 this.getMicroDependenciesData();

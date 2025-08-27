@@ -226,5 +226,10 @@ Note: Certain tabs will only be shown if applicable to a given dependency`
             expect(runHelp.stdout.toString()).to.contain('--customLogo [path]');
             expect(runHelp.stdout.toString()).to.contain('Use a custom logo');
         });
+
+        it(`--monorepo`, () => {
+            expect(runHelp.stdout.toString()).to.contain('--monorepo');
+            expect(runHelp.stdout.toString()).to.contain('Enable monorepo support');
+        });
     });
 });

@@ -95,7 +95,9 @@ export class Configuration implements ConfigurationInterface {
         angularProject: false,
         angularJSProject: false,
         language: COMPODOC_DEFAULTS.language,
-        maxSearchResults: 15
+        maxSearchResults: 15,
+        monorepo: false,
+        workspaceLibraries: []
     };
 
     private static instance: Configuration;

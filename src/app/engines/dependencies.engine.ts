@@ -1,4 +1,6 @@
 import * as _ from 'lodash';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
 import { MiscellaneousData } from '../interfaces/miscellaneous-data.interface';
 import { ParsedData } from '../interfaces/parsed-data.interface';
@@ -7,6 +9,7 @@ import { RouteInterface } from '../interfaces/routes.interface';
 import AngularApiUtil from '../../utils/angular-api.util';
 import { IApiSourceResult } from '../../utils/api-source-result.interface';
 import { getNamesCompareFn } from '../../utils/utils';
+import Configuration from '../configuration';
 
 import {
     IEnumDecDep,
@@ -135,12 +138,49 @@ export class DependenciesEngine {
         this.routes = this.rawData.routesTree;
         this.manageDuplicatesName();
         this.cleanRawModulesNames();
+        this.markInternalDependencies();
     }
 
     private cleanRawModulesNames() {
         this.rawModulesForOverview = this.rawModulesForOverview.map(module => {
             module.name = module.name.replace('$', '');
             return module;
+        });
+    }
+
+    private markInternalDependencies() {
+        const libs = Configuration.mainData.workspaceLibraries || [];
+        if (libs.length === 0) {
+            return;
+        }
+        const names = new Set(
+            libs
+                .map(lib => {
+                    try {
+                        const pkg = fs.readJsonSync(path.join(lib, 'package.json'));
+                        return pkg.name as string;
+                    } catch {
+                        return null;
+                    }
+                })
+                .filter(Boolean)
+        );
+        const mark = deps => {
+            if (!deps) {
+                return;
+            }
+            deps.forEach(dep => {
+                const spec = dep.moduleSpecifier || '';
+                if (spec.startsWith('.') || names.has(spec)) {
+                    dep.isInternal = true;
+                } else {
+                    dep.isInternal = false;
+                }
+            });
+        };
+        this.modules.forEach((module: any) => {
+            mark(module.imports);
+            mark(module.exports);
         });
     }
 
