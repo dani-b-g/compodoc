@@ -326,6 +326,32 @@ export class ImportsUtil {
         return finalPath;
     }
 
+    public getImportModuleSpecifier(variableName: string, sourceFile: ts.SourceFile): string {
+        const file =
+            typeof ast.getSourceFile(sourceFile.fileName) !== 'undefined'
+                ? ast.getSourceFile(sourceFile.fileName)
+                : ast.addSourceFileAtPath(sourceFile.fileName); // tslint:disable-line
+        const imports = file.getImportDeclarations();
+        let searchedImport;
+        imports.forEach(i => {
+            const namedImports = i.getNamedImports();
+            for (let j = 0; j < namedImports.length; j++) {
+                const importName = namedImports[j].getNameNode().getText();
+                const importAlias = namedImports[j].getAliasNode()
+                    ? namedImports[j].getAliasNode().getText()
+                    : undefined;
+                if (importName === variableName || importAlias === variableName) {
+                    searchedImport = i;
+                    break;
+                }
+            }
+        });
+        if (typeof searchedImport !== 'undefined') {
+            return searchedImport.getModuleSpecifierValue();
+        }
+        return '';
+    }
+
     /**
      * Find the file path of imported variable
      * @param  {string} inputVariableName  like thestring

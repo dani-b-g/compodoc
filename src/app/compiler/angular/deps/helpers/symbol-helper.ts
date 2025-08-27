@@ -38,6 +38,7 @@ export class SymbolHelper {
         }
         if (typeof srcFile !== 'undefined') {
             result.file = ImportsUtil.getFileNameOfImport(name, srcFile);
+            result.moduleSpecifier = ImportsUtil.getImportModuleSpecifier(name, srcFile);
         }
         result.name = name;
         result.type = type;
@@ -274,4 +275,6 @@ export interface IParseDeepIdentifierResult {
     name: string;
     file?: string;
     type: string | undefined;
+    moduleSpecifier?: string;
+    isInternal?: boolean;
 }

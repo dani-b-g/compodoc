@@ -1,5 +1,6 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import * as _ from 'lodash';
 
 import { ts } from 'ts-morph';
 
@@ -14,6 +15,8 @@ import { COMPODOC_DEFAULTS } from './utils/defaults';
 import { logger } from './utils/logger';
 
 import { readConfig, EXCLUDE_PATTERNS, INCLUDE_PATTERNS } from './utils/utils';
+import { discoverWorkspaces } from './utils/workspace.util';
+import { promiseSequential } from './utils/promise-sequential';
 
 import { cosmiconfigSync } from 'cosmiconfig';
 
@@ -202,6 +205,7 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
                 'Max search results on the results page. To show all results, set to 0',
                 COMPODOC_DEFAULTS.maxSearchResults
             )
+            .option('--monorepo', 'Enable monorepo support', false)
             .allowExcessArguments()
             .parse(process.argv);
 
@@ -217,6 +221,18 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
         let configFile: ConfigurationFileInterface = {};
 
         const programOptions = program.opts();
+
+        if (programOptions.monorepo) {
+            Configuration.mainData.monorepo = true;
+            Configuration.mainData.workspaceLibraries = discoverWorkspaces(cwd);
+            if (Configuration.mainData.workspaceLibraries.length > 0) {
+                logger.info(
+                    `Found ${Configuration.mainData.workspaceLibraries.length} workspace libraries`
+                );
+            } else {
+                logger.warn('Monorepo option set but no workspaces found');
+            }
+        }
 
         if (programOptions.config) {
             let configFilePath = programOptions.config;
@@ -737,7 +753,55 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
                 Configuration.mainData.hideGenerator = true;
             }
 
-            if (Configuration.mainData.tsconfig) {
+            if (Configuration.mainData.monorepo && Configuration.mainData.workspaceLibraries.length > 0) {
+                const baseConfiguration = _.cloneDeep(Configuration.mainData);
+                const generateForLib = (libPath: string) => {
+                    return new Promise<void>(resolve => {
+                        const libName = path.basename(libPath);
+                        const tsconfigCandidates = [
+                            path.join(libPath, 'tsconfig.lib.json'),
+                            path.join(libPath, 'tsconfig.json')
+                        ];
+                        const tsconfigFile = tsconfigCandidates.find(f => fs.existsSync(f));
+                        if (!tsconfigFile) {
+                            logger.warn(`No tsconfig found for workspace ${libName}, skipping`);
+                            return resolve();
+                        }
+
+                        Configuration.resetPages();
+                        Configuration.resetAdditionalPages();
+                        Configuration.resetRootMarkdownPages();
+                        Configuration.mainData = _.cloneDeep(baseConfiguration);
+                        Configuration.mainData.tsconfig = tsconfigFile;
+                        Configuration.mainData.output = path.join(baseConfiguration.output, libName);
+
+                        const files: string[] = [];
+                        const patterns = includeFiles.length ? includeFiles : INCLUDE_PATTERNS;
+                        const stream = fg.stream(patterns, {
+                            cwd: libPath,
+                            ignore: excludeFiles,
+                            absolute: true
+                        });
+
+                        stream.on('data', file => {
+                            if (path.extname(file) === '.ts' || path.extname(file) === '.tsx') {
+                                logger.debug('Including', file);
+                                files.push(file);
+                            } else {
+                                logger.warn('Excluding', file);
+                            }
+                        });
+
+                        stream.on('end', () => {
+                            super.setFiles(files);
+                            super.generate().then(() => resolve());
+                        });
+                    });
+                };
+
+                const tasks = Configuration.mainData.workspaceLibraries.map(lib => () => generateForLib(lib));
+                promiseSequential(tasks);
+            } else if (Configuration.mainData.tsconfig) {
                 /**
                  * tsconfig file provided only
                  */

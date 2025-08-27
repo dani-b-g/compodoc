@@ -148,6 +148,11 @@
                             {{else}}
                             <a href="{{relativeURL ../depth 'modules'}}modules/{{name}}.html">{{name}}</a>
                             {{/filterAngular2Modules}}
+                            {{#if isInternal}}
+                            <span class="badge badge-success compodoc-internal-dep">internal</span>
+                            {{else}}
+                            <span class="badge badge-warning compodoc-external-dep">external</span>
+                            {{/if}}
                         </li>
                         {{/each}}
                     </ul>
