@@ -124,3 +124,4 @@ describe('CLI Additional documentation - wrong folder', () => {
         // expect(stderrString).to.contain('Error during Additional documentation generation');
     });
 });
+

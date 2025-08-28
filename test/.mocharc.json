@@ -4,5 +4,7 @@
     "ui": "bdd",
     "timeout": 120000,
     "spec": "test/src/**/*.spec.ts",
-    "require": "ts-node/esm"
+    "require": [
+        "ts-node/register"
+    ]
 }
