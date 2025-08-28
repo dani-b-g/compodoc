@@ -1,5 +1,6 @@
 import DependenciesEngine from './dependencies.engine';
 import FileEngine from './file.engine';
+import { DOT_TEMPLATE } from './dot.template';
 
 const ngdT = require('@compodoc/ngd-transformer');
 
@@ -22,6 +23,7 @@ export class NgdEngine {
             outputFormats: 'svg',
             silent: true
         });
+        this.engine.template = DOT_TEMPLATE;
     }
 
     public renderGraph(filepath: string, outputpath: string, type: string, name?: string) {
@@ -35,7 +37,7 @@ export class NgdEngine {
     }
 
     public readGraph(filepath: string, name: string): Promise<string> {
-        return FileEngine.get(filepath).catch(err =>
+        return FileEngine.get(filepath).catch(() =>
             Promise.reject('Error during graph read ' + name)
         );
     }

@@ -87,4 +87,6 @@ export interface MainDataInterface {
     angularJSProject: boolean;
     language: string;
     maxSearchResults: number;
+    monorepo: boolean;
+    workspaceLibraries: string[];
 }

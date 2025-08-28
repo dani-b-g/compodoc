@@ -1,4 +1,6 @@
 import * as _ from 'lodash';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 
 import { MiscellaneousData } from '../interfaces/miscellaneous-data.interface';
 import { ParsedData } from '../interfaces/parsed-data.interface';
@@ -7,6 +9,7 @@ import { RouteInterface } from '../interfaces/routes.interface';
 import AngularApiUtil from '../../utils/angular-api.util';
 import { IApiSourceResult } from '../../utils/api-source-result.interface';
 import { getNamesCompareFn } from '../../utils/utils';
+import Configuration from '../configuration';
 
 import {
     IEnumDecDep,
@@ -135,6 +138,7 @@ export class DependenciesEngine {
         this.routes = this.rawData.routesTree;
         this.manageDuplicatesName();
         this.cleanRawModulesNames();
+        this.markInternalDependencies();
     }
 
     private cleanRawModulesNames() {
@@ -142,6 +146,50 @@ export class DependenciesEngine {
             module.name = module.name.replace('$', '');
             return module;
         });
+    }
+
+    private markInternalDependencies() {
+        const libs = Configuration.mainData.workspaceLibraries || [];
+        if (libs.length === 0) {
+            return;
+        }
+        const names = new Set(
+            libs
+                .map(lib => {
+                    try {
+                        const pkg = fs.readJsonSync(path.join(lib, 'package.json'));
+                        return pkg.name as string;
+                    } catch {
+                        return null;
+                    }
+                })
+                .filter(Boolean)
+        );
+        const mark = deps => {
+            if (!deps) {
+                return;
+            }
+            deps.forEach(dep => {
+                const spec = dep.moduleSpecifier || '';
+                if (spec.startsWith('.') || names.has(spec)) {
+                    dep.isInternal = true;
+                } else {
+                    dep.isInternal = false;
+                }
+            });
+        };
+        const apply = list => {
+            if (!list) {
+                return;
+            }
+            list.forEach((module: any) => {
+                mark(module.imports);
+                mark(module.exports);
+            });
+        };
+        apply(this.modules);
+        apply(this.rawModules);
+        apply(this.rawModulesForOverview);
     }
 
     private findInCompodocDependencies(name, data, file?): IApiSourceResult<any> {
@@ -222,7 +270,7 @@ export class DependenciesEngine {
             if (elementsWithSameName.length > 1) {
                 // First element is the reference for duplicates
                 for (let i = 1; i < elementsWithSameName.length; i++) {
-                    let elementToEdit = elementsWithSameName[i];
+                    const elementToEdit = elementsWithSameName[i];
                     if (typeof elementToEdit.isDuplicate === 'undefined') {
                         elementToEdit.isDuplicate = true;
                         elementToEdit.duplicateId = i;
@@ -269,7 +317,7 @@ export class DependenciesEngine {
         let bestScore = 0;
         let bestResult = undefined;
 
-        for (let searchFunction of searchFunctions) {
+        for (const searchFunction of searchFunctions) {
             const result = searchFunction();
 
             if (result.data && result.score > bestScore) {
