@@ -32,4 +32,11 @@ describe('CLI monorepo generation', () => {
         );
         expect(html).to.contain('FooModule');
     });
+
+    it('should generate a libraries index at root', () => {
+        expect(exists(path.join(outputDir, 'libs-index.html'))).to.be.true;
+        const indexHtml = fs.readFileSync(path.join(outputDir, 'libs-index.html'), 'utf8');
+        expect(indexHtml).to.contain('lib1/index.html');
+        expect(indexHtml).to.contain('lib2/index.html');
+    });
 });

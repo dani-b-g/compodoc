@@ -66,6 +66,15 @@ customElements.define('compodoc-menu', class extends HTMLElement {
                             </a>
                         </li>
                         {{/each}}
+                        {{#if monorepo}}
+                            {{#orLength workspaceLibraries}}
+                                <li class="link">
+                                    <a href="libs-index.html" data-type="chapter-link">
+                                        <span class="icon ion-ios-archive"></span>Workspace Libraries
+                                    </a>
+                                </li>
+                            {{/orLength}}
+                        {{/if}}
                         {{#unless disableDependencies}}
                             {{#orLength packageDependencies packagePeerDependencies}}
                                 <li class="link">

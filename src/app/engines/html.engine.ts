@@ -27,6 +27,7 @@ export class HtmlEngine {
         const partials = [
             'overview',
             'markdown',
+            'libs-index',
             'modules',
             'module',
             'component',

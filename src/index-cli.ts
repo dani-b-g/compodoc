@@ -800,7 +800,42 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
                 };
 
                 const tasks = Configuration.mainData.workspaceLibraries.map(lib => () => generateForLib(lib));
-                promiseSequential(tasks);
+                promiseSequential(tasks).then(async () => {
+                    try {
+                        // Restore base configuration and render monorepo libraries index at root output
+                        Configuration.resetPages();
+                        Configuration.resetAdditionalPages();
+                        Configuration.resetRootMarkdownPages();
+                        Configuration.mainData = _.cloneDeep(baseConfiguration);
+
+                        // Ensure root assets exist by copying from first generated library if needed
+                        const firstLib = Configuration.mainData.workspaceLibraries[0];
+                        const firstLibName = path.basename(firstLib);
+                        const firstLibOut = path.join(baseConfiguration.output, firstLibName);
+                        const rootOut = baseConfiguration.output;
+                        const foldersToCopy = ['images', 'js', 'styles'];
+                        foldersToCopy.forEach(folder => {
+                            const srcDir = path.join(firstLibOut, folder);
+                            const dstDir = path.join(rootOut, folder);
+                            if (fs.existsSync(srcDir) && !fs.existsSync(dstDir)) {
+                                fs.copySync(srcDir, dstDir);
+                            }
+                        });
+
+                        const html = (await HtmlEngine.init(Configuration.mainData.templates), HtmlEngine.render(Configuration.mainData, {
+                            name: 'libs-index',
+                            id: 'libs-index',
+                            context: 'libs-index',
+                            depth: 0,
+                            pageType: COMPODOC_DEFAULTS.PAGE_TYPES.ROOT
+                        }));
+
+                        await FileEngine.write(path.join(rootOut, 'libs-index.html'), html);
+                        logger.info('Generated monorepo libraries index at libs-index.html');
+                    } catch (e) {
+                        logger.error('Error generating monorepo libraries index', e);
+                    }
+                });
             } else if (Configuration.mainData.tsconfig) {
                 /**
                  * tsconfig file provided only
