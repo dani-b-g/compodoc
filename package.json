@@ -12,7 +12,7 @@
         "postinstall": "opencollective-postinstall || exit 0",
         "*********BUILD********": "*******************",
         "prebuild": "rimraf dist/*",
-        "build": "rollup -c rollup/rollup.config.mjs --bundleConfigAsCjs && npm run build-schematics",
+        "build": "rollup -c rollup/rollup.config.mjs --bundleConfigAsCjs && npm run build-schematics && node tools/copy-api-list.js",
         "build-schematics": "tsc --project schematics/tsconfig.json && cp schematics/collection.json dist",
         "*********UTILS********": "*******************",
         "changelog": "auto-changelog -o CH.md  --template tools/changelog-template.hbs -u",
