@@ -12,7 +12,9 @@ export function discoverWorkspaces(root: string): string[] {
             if (Array.isArray(lerna.packages)) {
                 patterns = lerna.packages;
             }
-        } catch {}
+        } catch {
+            /* empty */
+        }
     }
 
     if (patterns.length === 0) {
@@ -25,7 +27,9 @@ export function discoverWorkspaces(root: string): string[] {
                 } else if (pkg.workspaces && Array.isArray(pkg.workspaces.packages)) {
                     patterns = pkg.workspaces.packages;
                 }
-            } catch {}
+            } catch {
+                /* empty */
+            }
         }
     }
 

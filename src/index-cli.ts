@@ -8,6 +8,7 @@ import { Application } from './app/application';
 import Configuration from './app/configuration';
 import FileEngine from './app/engines/file.engine';
 import I18nEngine from './app/engines/i18n.engine';
+import HtmlEngine from './app/engines/html.engine';
 
 import { ConfigurationFileInterface } from './app/interfaces/configuration-file.interface';
 import AngularVersionUtil from './utils/angular-version.util';
@@ -190,7 +191,11 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
             )
             .option('--disableFilePath', 'Do not add the file path', false)
             .option('--disableOverview', 'Do not add the overview page', false)
-            .option('--templatePlayground', 'Generate template playground page for customizing templates', false)
+            .option(
+                '--templatePlayground',
+                'Generate template playground page for customizing templates',
+                false
+            )
             .option(
                 '--minimal',
                 'Minimal mode with only documentation. No search, no graph, no coverage.',
@@ -209,7 +214,7 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
             .allowExcessArguments()
             .parse(process.argv);
 
-        let outputHelp = () => {
+        const outputHelp = () => {
             program.outputHelp();
             process.exit(1);
         };
@@ -236,7 +241,7 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
 
         if (programOptions.config) {
             let configFilePath = programOptions.config;
-            let testConfigFilePath = configFilePath.match(process.cwd());
+            const testConfigFilePath = configFilePath.match(process.cwd());
             if (testConfigFilePath && testConfigFilePath.length > 0) {
                 configFilePath = configFilePath.replace(process.cwd() + path.sep, '');
             }
@@ -248,6 +253,18 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
         if (configExplorerResult) {
             if (typeof configExplorerResult.config !== 'undefined') {
                 configFile = configExplorerResult.config;
+            }
+        }
+
+        if (!Configuration.mainData.monorepo && configFile.monorepo) {
+            Configuration.mainData.monorepo = true;
+            Configuration.mainData.workspaceLibraries = discoverWorkspaces(cwd);
+            if (Configuration.mainData.workspaceLibraries.length > 0) {
+                logger.info(
+                    `Found ${Configuration.mainData.workspaceLibraries.length} workspace libraries`
+                );
+            } else {
+                logger.warn('Monorepo option set but no workspaces found');
             }
         }
 
@@ -578,7 +595,7 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
         if (programOptions.disableFilePath) {
             Configuration.mainData.disableFilePath = programOptions.disableFilePath;
         }
-      
+
         if (configFile.disableOverview) {
             Configuration.mainData.disableOverview = configFile.disableOverview;
         }
@@ -753,7 +770,10 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
                 Configuration.mainData.hideGenerator = true;
             }
 
-            if (Configuration.mainData.monorepo && Configuration.mainData.workspaceLibraries.length > 0) {
+            if (
+                Configuration.mainData.monorepo &&
+                Configuration.mainData.workspaceLibraries.length > 0
+            ) {
                 const baseConfiguration = _.cloneDeep(Configuration.mainData);
                 const generateForLib = (libPath: string) => {
                     return new Promise<void>(resolve => {
@@ -773,7 +793,10 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
                         Configuration.resetRootMarkdownPages();
                         Configuration.mainData = _.cloneDeep(baseConfiguration);
                         Configuration.mainData.tsconfig = tsconfigFile;
-                        Configuration.mainData.output = path.join(baseConfiguration.output, libName);
+                        Configuration.mainData.output = path.join(
+                            baseConfiguration.output,
+                            libName
+                        );
 
                         const files: string[] = [];
                         const patterns = includeFiles.length ? includeFiles : INCLUDE_PATTERNS;
@@ -799,43 +822,25 @@ Note: Certain tabs will only be shown if applicable to a given dependency`,
                     });
                 };
 
-                const tasks = Configuration.mainData.workspaceLibraries.map(lib => () => generateForLib(lib));
-                promiseSequential(tasks).then(async () => {
-                    try {
-                        // Restore base configuration and render monorepo libraries index at root output
+                const tasks = Configuration.mainData.workspaceLibraries.map(
+                    lib => () => generateForLib(lib)
+                );
+                promiseSequential(tasks)
+                    .then(() => {
                         Configuration.resetPages();
                         Configuration.resetAdditionalPages();
                         Configuration.resetRootMarkdownPages();
                         Configuration.mainData = _.cloneDeep(baseConfiguration);
-
-                        // Ensure root assets exist by copying from first generated library if needed
-                        const firstLib = Configuration.mainData.workspaceLibraries[0];
-                        const firstLibName = path.basename(firstLib);
-                        const firstLibOut = path.join(baseConfiguration.output, firstLibName);
-                        const rootOut = baseConfiguration.output;
-                        const foldersToCopy = ['images', 'js', 'styles'];
-                        foldersToCopy.forEach(folder => {
-                            const srcDir = path.join(firstLibOut, folder);
-                            const dstDir = path.join(rootOut, folder);
-                            if (fs.existsSync(srcDir) && !fs.existsSync(dstDir)) {
-                                fs.copySync(srcDir, dstDir);
-                            }
-                        });
-
-                        const html = (await HtmlEngine.init(Configuration.mainData.templates), HtmlEngine.render(Configuration.mainData, {
+                        Configuration.addPage({
                             name: 'libs-index',
                             id: 'libs-index',
                             context: 'libs-index',
                             depth: 0,
                             pageType: COMPODOC_DEFAULTS.PAGE_TYPES.ROOT
-                        }));
-
-                        await FileEngine.write(path.join(rootOut, 'libs-index.html'), html);
-                        logger.info('Generated monorepo libraries index at libs-index.html');
-                    } catch (e) {
-                        logger.error('Error generating monorepo libraries index', e);
-                    }
-                });
+                        });
+                        return HtmlEngine.init(Configuration.mainData.templates);
+                    })
+                    .then(() => this.processPages());
             } else if (Configuration.mainData.tsconfig) {
                 /**
                  * tsconfig file provided only

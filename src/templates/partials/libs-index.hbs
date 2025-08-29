@@ -1,19 +1,6 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-sm-12">
-      <h1>Workspace Libraries</h1>
-      {{#if data.workspaceLibraries}}
-      <ul class="list">
-        {{#each data.workspaceLibraries}}
-          <li class="link">
-            <a href="{{basename this}}/index.html" data-type="entity-link">{{basename this}}</a>
-          </li>
-        {{/each}}
-      </ul>
-      {{else}}
-        <p>No libraries found.</p>
-      {{/if}}
-    </div>
-  </div>
-</div>
-
+<h1>Libraries</h1>
+<ul class="libraries-list">
+{{#each workspaceLibraries}}
+    <li><a href="{{basename this}}/index.html">{{basename this}}</a></li>
+{{/each}}
+</ul>

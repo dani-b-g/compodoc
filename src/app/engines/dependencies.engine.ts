@@ -178,10 +178,18 @@ export class DependenciesEngine {
                 }
             });
         };
-        this.modules.forEach((module: any) => {
-            mark(module.imports);
-            mark(module.exports);
-        });
+        const apply = list => {
+            if (!list) {
+                return;
+            }
+            list.forEach((module: any) => {
+                mark(module.imports);
+                mark(module.exports);
+            });
+        };
+        apply(this.modules);
+        apply(this.rawModules);
+        apply(this.rawModulesForOverview);
     }
 
     private findInCompodocDependencies(name, data, file?): IApiSourceResult<any> {
@@ -262,7 +270,7 @@ export class DependenciesEngine {
             if (elementsWithSameName.length > 1) {
                 // First element is the reference for duplicates
                 for (let i = 1; i < elementsWithSameName.length; i++) {
-                    let elementToEdit = elementsWithSameName[i];
+                    const elementToEdit = elementsWithSameName[i];
                     if (typeof elementToEdit.isDuplicate === 'undefined') {
                         elementToEdit.isDuplicate = true;
                         elementToEdit.duplicateId = i;
@@ -309,7 +317,7 @@ export class DependenciesEngine {
         let bestScore = 0;
         let bestResult = undefined;
 
-        for (let searchFunction of searchFunctions) {
+        for (const searchFunction of searchFunctions) {
             const result = searchFunction();
 
             if (result.data && result.score > bestScore) {

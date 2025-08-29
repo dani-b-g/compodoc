@@ -94,6 +94,14 @@ customElements.define('compodoc-menu', class extends HTMLElement {
                             {{/orLength}}
                         {{/unless}}
 
+                        {{#if workspaceLibraries}}
+                            <li class="link">
+                                <a href="libs-index.html" data-type="chapter-link">
+                                    <span class="icon ion-ios-albums"></span>Libraries
+                                </a>
+                            </li>
+                        {{/if}}
+
                     </ul>
                 </li>
                 {{#if additionalPages}}

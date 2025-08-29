@@ -5,6 +5,7 @@ import * as _ from 'lodash';
 import { BreakCommaHelper } from './html-engine-helpers/break-comma.helper';
 import { BreakLinesHelper } from './html-engine-helpers/break-lines.helper';
 import { CapitalizeHelper } from './html-engine-helpers/capitalize.helper';
+import { BasenameHelper } from './html-engine-helpers/basename.helper';
 import { CleanParagraphHelper } from './html-engine-helpers/clean-paragraph.helper';
 import { CompareHelper } from './html-engine-helpers/compare.helper';
 import { DebugHelper } from './html-engine-helpers/debug.helper';
@@ -59,6 +60,7 @@ export class HtmlEngineHelpers {
         this.registerHelper(bars, 'clean-paragraph', new CleanParagraphHelper());
         this.registerHelper(bars, 'escapeSimpleQuote', new EscapeSimpleQuoteHelper());
         this.registerHelper(bars, 'breakComma', new BreakCommaHelper(bars));
+        this.registerHelper(bars, 'basename', new BasenameHelper());
         this.registerHelper(bars, 'modifKind', new ModifKindHelper());
         this.registerHelper(bars, 'modifIcon', new ModifIconHelper());
         this.registerHelper(bars, 'relativeURL', new RelativeURLHelper());
@@ -87,6 +89,7 @@ export class HtmlEngineHelpers {
     private registerHelper(bars, key: string, helper: IHtmlEngineHelper) {
         Handlebars.registerHelper(key, function () {
             // tslint:disable-next-line:no-invalid-this
+            // eslint-disable-next-line prefer-rest-params
             return helper.helperFunc.apply(helper, [this, ..._.slice(arguments as any)]);
         });
     }

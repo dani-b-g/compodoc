@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { BarDirective } from './bar.directive';
 import { BarComponent } from './bar.component';
 import { BarService } from './bar.service';
@@ -18,6 +19,7 @@ import { FooModule } from 'lib1';
     declarations: [BarDirective, BarComponent],
     exports: [BarDirective, BarComponent],
     providers: [BarService],
-    imports: [FooModule]
+    imports: [CommonModule, FooModule]
 })
 export class BarModule {}
+

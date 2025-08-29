@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
 import { IApiSourceResult } from './api-source-result.interface';
 
-const AngularAPIs: Array<IAngularMainApi> = require('../src/data/api-list.json');
+const AngularAPIs: Array<IAngularMainApi> = require('../data/api-list.json');
 
 export class AngularApiUtil {
     private static instance: AngularApiUtil;
@@ -14,7 +14,7 @@ export class AngularApiUtil {
     }
 
     public findApi(type: string): IApiSourceResult<IAngularMainApi> {
-        let foundedApi;
+        let foundedApi: IAngularApi | undefined;
         _.forEach(AngularAPIs, mainApi => {
             _.forEach(mainApi.items, api => {
                 if (api.title === type) {
@@ -24,7 +24,8 @@ export class AngularApiUtil {
         });
         return {
             source: 'external',
-            data: foundedApi
+            data: foundedApi as any,
+            score: foundedApi ? 1 : 0
         };
     }
 }

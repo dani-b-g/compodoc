@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 
-import { shell, pkg } from '../helpers';
+import { shell, pkg, temporaryDir, exists, path } from '../helpers';
 
 describe('CLI Options', () => {
     let runHelp = undefined;
@@ -230,6 +230,29 @@ Note: Certain tabs will only be shown if applicable to a given dependency`
         it(`--monorepo`, () => {
             expect(runHelp.stdout.toString()).to.contain('--monorepo');
             expect(runHelp.stdout.toString()).to.contain('Enable monorepo support');
+        });
+    });
+
+    describe('monorepo via config file', () => {
+        const tmp = temporaryDir();
+        const distFolder = tmp.name + '-monorepo-config';
+        const outputDir = path.resolve(distFolder);
+        const fixturePath = path.resolve('test/fixtures/monorepo');
+        let run;
+
+        before(function () {
+            this.timeout(120000);
+            tmp.create(outputDir);
+            run = shell('node', ['../../../bin/index-cli.js', '-c', 'compodoc.json', '-d', outputDir], {
+                cwd: fixturePath
+            });
+        });
+
+        after(() => tmp.clean(outputDir));
+
+        it('should enable monorepo mode from configuration file', () => {
+            expect(run.stdout.toString()).to.contain('Found 2 workspace libraries');
+            expect(exists(path.join(outputDir, 'lib1', 'index.html'))).to.be.true;
         });
     });
 });

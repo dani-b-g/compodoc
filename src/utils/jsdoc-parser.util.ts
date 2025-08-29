@@ -3,7 +3,11 @@ import { ts, SyntaxKind } from 'ts-morph';
 
 import * as _ts from './ts-internal';
 
-import { JSDocParameterTagExt } from '../app/nodes/jsdoc-parameter-tag.node';
+// Local fallback for extended JSDoc parameter tag type
+interface JSDocParameterTagExt extends ts.JSDocParameterTag {
+    parameterName?: any;
+    name?: any;
+}
 
 export class JsdocParserUtil {
     public isVariableLike(node: ts.Node): node is ts.VariableLikeDeclaration {
@@ -247,11 +251,11 @@ export class JsdocParserUtil {
             cache = _.concat(cache, this.getJSDocParameterTags(node));
         }
 
-        if (this.isVariableLike(node) && node.initializer) {
-            cache = _.concat(cache, node.initializer.jsDoc);
+        if (this.isVariableLike(node) && (node as any).initializer) {
+            cache = _.concat(cache, (node as any).initializer?.jsDoc);
         }
 
-        cache = _.concat(cache, node.jsDoc);
+        cache = _.concat(cache, (node as any).jsDoc);
 
         return cache;
     }

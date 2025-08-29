@@ -36,23 +36,25 @@ The demo features documentation generated for a simple [TodoMVC application].
 
 # Features
 
--   **Clean, simple design** — Navigate the documentation on the left side, read it on the right.
+- **Clean, simple design** — Navigate the documentation on the left side, read it on the right.
 
--   **Beautiful themes** — Seven themes are available from well known documentation tools like [Gitbook], [Read the Docs] and projects like [Vagrant], [Laravel], [Postmark] and [Stripe].
+- **Beautiful themes** — Seven themes are available from well known documentation tools like [Gitbook], [Read the Docs] and projects like [Vagrant], [Laravel], [Postmark] and [Stripe].
 
--   **Search** — Includes a powerful search engine ([lunr.js]) for easily finding what you're looking for.
+- **Search** — Includes a powerful search engine ([lunr.js]) for easily finding what you're looking for.
 
--   **Automatic table of contents** — API table of contents is generated using elements found during files parsing.
+- **Automatic table of contents** — API table of contents is generated using elements found during files parsing.
 
--   **JSDoc light support** — Support for `@param`, `@returns`, `@link`, `@ignore` and `@example` tags.
+- **JSDoc light support** — Support for `@param`, `@returns`, `@link`, `@ignore` and `@example` tags.
 
--   **Documentation coverage** — Get the documentation coverage report of your project.
+- **Documentation coverage** — Get the documentation coverage report of your project.
 
--   **Angular CLI-friendly** — Supports [Angular CLI] projects out-of-the-box.
+- **Angular CLI-friendly** — Supports [Angular CLI] projects out-of-the-box.
 
--   **Offline** — No server needed, no sources uploaded online, documentation generated entirely offline.
+- **Monorepo support** — Use `--monorepo` or `"monorepo": true` in `compodoc.json` to document npm workspaces or Lerna projects, generating an index and per-library docs.
 
--   **Open-source and on npm** — Use it directly in your project using [npm] and a single script—that's it!
+- **Offline** — No server needed, no sources uploaded online, documentation generated entirely offline.
+
+- **Open-source and on npm** — Use it directly in your project using [npm] and a single script—that's it!
 
 [gitbook]: https://www.gitbook.com
 [read the docs]: https://readthedocs.org/
@@ -71,6 +73,10 @@ Official documentation has moved to [https://compodoc.github.io/website/](https:
 # Installation
 
 Ready to get started? [Read installation instructions](https://compodoc.github.io/website/guides/installation.html).
+
+# Monorepo mode
+
+Compodoc can document multiple libraries in an npm workspace or Lerna repository. Use `--monorepo` or set `"monorepo": true` in `compodoc.json`. When enabled, each library gets its own documentation folder and the output includes a `libs-index.html` linking them together.
 
 # 🏅 Backers
 

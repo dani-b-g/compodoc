@@ -44,6 +44,7 @@ export class HtmlEngine {
             'routes',
             'index',
             'index-misc',
+            'libs-index',
             'search-results',
             'search-input',
             'link-type',
@@ -171,7 +172,7 @@ export class HtmlEngine {
                     return Promise.reject(err);
                 });
             },
-            err => Promise.reject('Error during coverage badge generation')
+            () => Promise.reject('Error during coverage badge generation')
         );
     }
 }
